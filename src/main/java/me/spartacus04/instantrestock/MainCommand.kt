@@ -8,6 +8,11 @@ import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.entity.Player
+import org.bukkit.entity.EntityType
+import org.bukkit.persistence.PersistentDataType
+import org.bukkit.entity.AbstractVillager
+import org.bukkit.NamespacedKey
 
 internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, TabCompleter {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
@@ -74,6 +79,24 @@ internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, T
                         sender.sendMessage("§cYou don't have permission to do that!")
                     }
                 }
+                "infinite" -> {
+                    if(sender.hasPermission("instantrestock.infinite")) {
+                        if (args.size >= 2 && sender is Player) {
+                            val target = (sender as Player).getTargetEntity(10)
+                            if (target != null && target.type == EntityType.VILLAGER) {
+                                val villager = target as AbstractVillager
+                                val setInfinite = args[1].equals("true", ignoreCase = true)
+                                villager.persistentDataContainer.set(plugin.infiniteKey, PersistentDataType.BOOLEAN, setInfinite)
+                                sender.sendMessage("§aInfinite tag set to $setInfinite for the targeted villager.")
+                            } else {
+                                sender.sendMessage("§cNo valid villager targeted.")
+                            }
+                        } else {
+                            sender.sendMessage("§cInvalid arguments or not a player.")
+                        }
+                    } else {
+                        sender.sendMessage("§cYou don't have permission to do that!")
+                    }
             }
         }
         catch (_: Exception) {
@@ -90,9 +113,12 @@ internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, T
             1 -> {
                 if(sender.hasPermission("instantrestock.reload"))
                     list.add("reload")
-
+    
                 if(sender.hasPermission("instantrestock.config"))
                     list.add("config")
+    
+                if(sender.hasPermission("instantrestock.infinite"))
+                    list.add("infinite")
             }
             2 -> {
                 if(args[0] == "config") {
@@ -103,6 +129,8 @@ internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, T
                         "uninstallMode",
                         "allowTravellingMerchants"
                     ))
+                } else if (args[0] == "infinite") {
+                    list.addAll(listOf("true", "false"))
                 }
             }
             3 -> {
