@@ -13,13 +13,17 @@ import org.bukkit.entity.EntityType
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.entity.AbstractVillager
 import org.bukkit.NamespacedKey
+import org.bukkit.entity.Entity
+import org.bukkit.util.RayTraceResult
 
-internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, TabCompleter {
+internal class MainCommand(private val plugin: JavaPlugin) : CommandExecutor, TabCompleter {
+    private lateinit var infiniteKey: NamespacedKey
+
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         try {
-            when(args[0]) {
+            when (args[0]) {
                 "reload" -> {
-                    if(sender.hasPermission("instantrestock.reload")) {
+                    if (sender.hasPermission("instantrestock.reload")) {
                         sender.sendMessage("§aReloading Instantrestock...")
                         SettingsContainer.reloadConfig(plugin)
                         sender.sendMessage("§aReloaded!")
@@ -28,18 +32,16 @@ internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, T
                     }
                 }
                 "config" -> {
-                    if(sender.hasPermission("instantrestock.config")) {
-                        when(args[1]) {
+                    if (sender.hasPermission("instantrestock.config")) {
+                        when (args[1]) {
                             "maxTrades" -> {
-                                if(args[2] == "infinite") {
+                                if (args[2] == "infinite") {
                                     CONFIG.maxTrades = Integer.MAX_VALUE
                                     saveConfig(plugin)
-                                }
-                                else if (args[2].toIntOrNull() != null) {
+                                } else if (args[2].toIntOrNull() != null) {
                                     CONFIG.maxTrades = args[2].toInt()
                                     saveConfig(plugin)
-                                }
-                                else {
+                                } else {
                                     sender.sendMessage("§cInvalid value")
                                 }
                             }
@@ -56,15 +58,15 @@ internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, T
                                 saveConfig(plugin)
                             }
                             "villagerBlacklist" -> {
-                                when(args[2]) {
+                                when (args[2]) {
                                     "add" -> {
-                                        if(villagerList.contains(args[3].uppercase()) && !CONFIG.villagerBlacklist.contains(args[3].uppercase())) {
+                                        if (villagerList.contains(args[3].uppercase()) && !CONFIG.villagerBlacklist.contains(args[3].uppercase())) {
                                             CONFIG.villagerBlacklist.add(args[3].uppercase())
                                             saveConfig(plugin)
                                         }
                                     }
                                     "remove" -> {
-                                        if(villagerList.contains(args[3].uppercase()) && CONFIG.villagerBlacklist.contains(args[3].uppercase())) {
+                                        if (villagerList.contains(args[3].uppercase()) && CONFIG.villagerBlacklist.contains(args[3].uppercase())) {
                                             CONFIG.villagerBlacklist.remove(args[3].uppercase())
                                             saveConfig(plugin)
                                         }
@@ -80,13 +82,13 @@ internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, T
                     }
                 }
                 "infinite" -> {
-                    if(sender.hasPermission("instantrestock.infinite")) {
+                    if (sender.hasPermission("instantrestock.infinite")) {
                         if (args.size >= 2 && sender is Player) {
-                            val target = (sender as Player).getTargetEntity(10)
+                            val target = getTargetEntity(sender, 10)
                             if (target != null && target.type == EntityType.VILLAGER) {
                                 val villager = target as AbstractVillager
                                 val setInfinite = args[1].equals("true", ignoreCase = true)
-                                villager.persistentDataContainer.set(plugin.infiniteKey, PersistentDataType.BOOLEAN, setInfinite)
+                                villager.persistentDataContainer.set(infiniteKey, PersistentDataType.BOOLEAN, setInfinite)
                                 sender.sendMessage("§aInfinite tag set to $setInfinite for the targeted villager.")
                             } else {
                                 sender.sendMessage("§cNo valid villager targeted.")
@@ -97,31 +99,36 @@ internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, T
                     } else {
                         sender.sendMessage("§cYou don't have permission to do that!")
                     }
+                }
             }
-        }
-        catch (_: Exception) {
+        } catch (e: Exception) {
             sender.sendMessage("§cInvalid value")
         }
 
         return true
     }
 
+    private fun getTargetEntity(player: Player, range: Int): Entity? {
+        val result: RayTraceResult? = player.world.rayTraceEntities(player.eyeLocation, player.eyeLocation.direction, range.toDouble())
+        return result?.hitEntity
+    }
+
     override fun onTabComplete(sender: CommandSender, command: Command, label: String, args: Array<out String>): MutableList<String> {
         val list = ArrayList<String>()
 
-        when(args.size) {
+        when (args.size) {
             1 -> {
-                if(sender.hasPermission("instantrestock.reload"))
+                if (sender.hasPermission("instantrestock.reload"))
                     list.add("reload")
-    
-                if(sender.hasPermission("instantrestock.config"))
+
+                if (sender.hasPermission("instantrestock.config"))
                     list.add("config")
-    
-                if(sender.hasPermission("instantrestock.infinite"))
+
+                if (sender.hasPermission("instantrestock.infinite"))
                     list.add("infinite")
             }
             2 -> {
-                if(args[0] == "config") {
+                if (args[0] == "config") {
                     list.addAll(listOf(
                         "maxTrades",
                         "villagerBlacklist",
@@ -134,8 +141,8 @@ internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, T
                 }
             }
             3 -> {
-                if(args[0] == "config") {
-                    when(args[1]) {
+                if (args[0] == "config") {
+                    when (args[1]) {
                         "maxTrades" -> {
                             list.addAll(listOf("infinite", "1000", "100"))
                         }
@@ -149,8 +156,8 @@ internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, T
                 }
             }
             4 -> {
-                if(args[0] == "config" && args[1] == "villagerBlacklist") {
-                    when(args[2]) {
+                if (args[0] == "config" && args[1] == "villagerBlacklist") {
+                    when (args[2]) {
                         "add", "remove" -> list.addAll(villagerList)
                     }
                 }
@@ -160,3 +167,4 @@ internal class MainCommand(private val plugin : JavaPlugin) : CommandExecutor, T
         return list
     }
 }
+
