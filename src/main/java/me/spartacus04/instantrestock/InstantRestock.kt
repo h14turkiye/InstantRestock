@@ -24,6 +24,8 @@ class InstantRestock : JavaPlugin(), Listener {
         getCommand("instantrestock")!!.setExecutor(MainCommand(this))
 
         key = NamespacedKey(this, "instant_restock")
+        infiniteKey = NamespacedKey(this, "infinite")
+        
         server.pluginManager.registerEvents(this, this)
 
         if(CONFIG.allowMetrics)
@@ -73,7 +75,9 @@ class InstantRestock : JavaPlugin(), Listener {
             }
         }
 
-        if(!merchant.persistentDataContainer.has(key, TradesDataType())) {
+        if(merchant.persistentDataContainer.get(infiniteKey, PersistentDataType.BOOLEAN) == true) return
+
+        if(!merchant.persistentDataContainer.has(key, TradesDataType())) { 
             saveVillagerTrades(merchant)
         }
 
@@ -86,6 +90,8 @@ class InstantRestock : JavaPlugin(), Listener {
 
         if(merchant.type == EntityType.WANDERING_TRADER && !CONFIG.allowTravellingMerchants) return
         if(CONFIG.uninstallMode) return
+
+        if(merchant.persistentDataContainer.get(infiniteKey, PersistentDataType.BOOLEAN) == true) return
 
         if(merchant.persistentDataContainer.has(key, TradesDataType())) {
             restoreVillagerTrades(merchant)
