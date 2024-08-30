@@ -13,11 +13,13 @@ import org.bukkit.event.Listener
 import org.bukkit.event.entity.VillagerAcquireTradeEvent
 import org.bukkit.event.player.PlayerInteractAtEntityEvent
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.persistence.PersistentDataType
 
 @Suppress("unused")
 class InstantRestock : JavaPlugin(), Listener {
     private lateinit var key: NamespacedKey
-
+    private lateinit var infiniteKey: NamespacedKey
+    
     override fun onEnable() {
         SettingsContainer.reloadConfig(this)
 
