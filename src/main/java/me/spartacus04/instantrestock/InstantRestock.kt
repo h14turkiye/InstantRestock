@@ -47,6 +47,7 @@ class InstantRestock : JavaPlugin(), Listener {
         if(e.rightClicked !is AbstractVillager) return
 
         val merchant = e.rightClicked as AbstractVillager
+        if(merchant.persistentDataContainer.get(infiniteKey, PersistentDataType.BOOLEAN) == true) return
 
         if(CONFIG.uninstallMode) {
             if(merchant.persistentDataContainer.has(key, TradesDataType())) {
@@ -57,6 +58,7 @@ class InstantRestock : JavaPlugin(), Listener {
             return
         }
 
+        
         if(merchant.type == EntityType.WANDERING_TRADER && !CONFIG.allowTravellingMerchants) {
             if(merchant.persistentDataContainer.has(key, TradesDataType())) {
                 restoreVillagerTrades(merchant)
@@ -77,7 +79,6 @@ class InstantRestock : JavaPlugin(), Listener {
             }
         }
 
-        if(merchant.persistentDataContainer.get(infiniteKey, PersistentDataType.BOOLEAN) == true) return
 
         if(!merchant.persistentDataContainer.has(key, TradesDataType())) { 
             saveVillagerTrades(merchant)
